@@ -33,7 +33,7 @@ async def get_packages_from_canister(query: str):
                         seen_names.add(package["name"])
                         deduplicated.append(package)
 
-                return deduplicated[:10]
+                return deduplicated[:5]
             else:
                 return None
 
@@ -46,7 +46,10 @@ async def format_package_info(package):
         if package["depiction"]
         else f"[[Add {package['repository']['name']}](https://repos.slim.rocks/repo/?repoUrl={package['repository']['uri']})]"
     )
-    return f"↳ {package['name']} `{package['package']}` {buttons}\n\n"
+    description = package["description"]
+    if len(description) > 128:
+        description = description[:128].rstrip() + "..."
+    return f"↳ {package['name']} `{package['package']}`\n\n    {description}\n\n{buttons}\n\n---\n"
 
 
 async def process_comment(comment):
@@ -66,11 +69,10 @@ async def process_comment(comment):
             )
 
             if packages := await get_packages_from_canister(query):
-                response = f"Found {len(packages)} {'packages' if len(packages) > 1 else 'package'}:\n\n"
-                response += "\n".join(
+                response = "\n".join(
                     [await format_package_info(package) for package in packages]
                 )
-                response += "\n\n^(I am a bot. Powered by Canister. Written by stkc. Beep boop, etc.)"
+                response += "\n\n^I ^am ^a ^bot. ^Powered ^by ^[Canister](https://canister.me). ^Written ^by ^[stkc](https://stkc.win). ^Beep ^boop, ^etc."
                 await comment.reply(response)
 
     except Exception as e:
