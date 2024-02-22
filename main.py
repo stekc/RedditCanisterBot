@@ -15,6 +15,17 @@ footer = "\n\n^I ^am ^a ^bot. ^Powered ^by ^[Canister](https://canister.me). ^Wr
 
 
 @cached(ttl=86400)
+async def get_ios_cfw():
+    async with aiohttp.ClientSession() as client:
+        async with client.get("https://api.appledb.dev/main.json") as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return data
+            else:
+                return None
+
+
+@cached(ttl=86400)
 async def canister_fetch_repos():
     async with aiohttp.ClientSession() as client:
         async with client.get(
@@ -106,12 +117,61 @@ async def process_comment(comment):
                             f"[{name}]({url}) [[Add Repo](https://repos.slim.rocks/repo/?repoUrl={url})]\n\n    {description}"
                             + footer
                         )
+            if command == "jailbreak" or command == "jb":
+                print(
+                    f"!jailbreak {subquery} ran by u/{comment.author.name} \nhttps://reddit.com{comment.permalink}\n"
+                )
+                response = await get_ios_cfw()
+                jbs = response.get("jailbreak")
+                matching_jbs = [
+                    jb for jb in jbs if jb.get("name").lower() == subquery.lower()
+                ]
+                if matching_jbs:
+                    jb = matching_jbs[0]
+                    info = jb.get("info")
+                    if jb:
+                        name = jb.get("name")
+                        if info.get("firmwares"):
+                            soc = (
+                                f"Works with {info.get('soc')}"
+                                if info.get("soc")
+                                else ""
+                            )
+                            firmwares = info.get("firmwares")
+                            if isinstance(firmwares, list):
+                                if len(firmwares) > 2:
+                                    firmwares = ", ".join(firmwares)
+                                else:
+                                    firmwares = " - ".join(info.get("firmwares"))
+                                compatible = (
+                                    f'iOS {firmwares}\n{f"**{soc}**" if soc else ""}'
+                                )
+                            else:
+                                compatible = "Unknown"
+                            jb_type = info.get("type") or "Unknown"
+                            website = info.get("website").get("url") or None
+                            if info.get("guide"):
+                                for guide in info.get("guide"):
+                                    if guide.get("validGuide"):
+                                        guide = (
+                                            f"https://ios.cfw.guide{guide.get('url')}"
+                                            or None
+                                        )
+                    if name and (website or guide):
+                        reply_text = f"{name}"
+                        if website and guide:
+                            reply_text += f" [[Website]({website}) | [Guide]({guide})]"
+                        elif website:
+                            reply_text += f" [[Website]({website})]"
+                        reply_text += f"\n\nType: {jb_type}\n\nCompatible: {compatible}"
+                        reply_text += footer
+                        await comment.reply(reply_text)
             if command == "help":
                 print(
                     f"!help ran by u/{comment.author.name} \nhttps://reddit.com{comment.permalink}\n"
                 )
                 await comment.reply(
-                    f"Commands:\n\n!repo <repo slug> (!repo bigboss){footer}"
+                    f"Commands:\n\n!repo <repo slug> (!repo bigboss)\n\n!jailbreak, !jb <jailbreak name> (!jailbreak taurine){footer}"
                 )
                 return
 
