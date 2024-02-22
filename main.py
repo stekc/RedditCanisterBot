@@ -38,7 +38,7 @@ async def get_packages_from_canister(query: str):
                 return None
 
 
-def format_package_info(package):
+async def format_package_info(package):
     if not package["name"]:
         package["name"] = package["package"]
     buttons = (
@@ -69,8 +69,8 @@ async def process_comment(comment):
             packages = await get_packages_from_canister(query)
             if packages:
                 response = f"Found {len(packages)} {'packages' if len(packages) > 1 else 'package'}:\n\n"
-                response += "".join(
-                    format_package_info(package) for package in packages
+                response += "\n".join(
+                    [await format_package_info(package) for package in packages]
                 )
                 response += "\n\n^(I am a bot. Powered by Canister. Written by stkc. Beep boop, etc.)"
                 await comment.reply(response)
