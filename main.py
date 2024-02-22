@@ -57,8 +57,7 @@ async def process_comment(comment):
         if comment.author.name in [os.getenv("USERNAME"), "AutoModerator"]:
             return
 
-        match = pattern.match(comment.body)
-        if match:
+        if match := pattern.match(comment.body):
             query = match.group(1)
             if len(query) < 3:
                 return
@@ -66,8 +65,7 @@ async def process_comment(comment):
                 f"Comment from u/{comment.author.name} matched ({query})\nhttps://reddit.com{comment.permalink}\n"
             )
 
-            packages = await get_packages_from_canister(query)
-            if packages:
+            if packages := await get_packages_from_canister(query):
                 response = f"Found {len(packages)} {'packages' if len(packages) > 1 else 'package'}:\n\n"
                 response += "\n".join(
                     [await format_package_info(package) for package in packages]
