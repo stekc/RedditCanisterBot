@@ -77,7 +77,7 @@ async def format_package_info(package):
     description = package["description"]
     if len(description) > 128:
         description = description[:128].rstrip() + "..."
-    return f"↳ {package['name']} `{package['package']}`\n\n    {description}\n\n{buttons}\n\n---\n"
+    return f"↳ {package['name']} `{package['package']}`\n\n{description}\n\n{buttons}\n\n---\n"
 
 
 async def process_comment(comment):
@@ -114,7 +114,7 @@ async def process_comment(comment):
                     description = repo_data.get("description")
                     if name and url:
                         await comment.reply(
-                            f"[{name}]({url}) [[Add Repo](https://repos.slim.rocks/repo/?repoUrl={url})]\n\n    {description}"
+                            f"[{name}]({url}) [[Add Repo](https://repos.slim.rocks/repo/?repoUrl={url})]\n\n{description}"
                             + footer
                         )
             if command == "jailbreak" or command == "jb":
