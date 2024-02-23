@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-footer = "\n\n^I ^am ^a ^bot. ^Powered ^by ^[Canister](https://canister.me). ^Written ^by ^[stkc](https://stkc.win). ^Use ^!help ^to ^see ^commands. ^Beep ^boop, ^etc."
+footer = "\n\n^I ^am ^a ^bot. ^Powered ^by ^[Canister](https://canister.me). ^Written ^by ^[stkc](https://stkc.win). ^View ^commands ^and ^source ^code ^[here](https://github.com/stekc/RedditCanisterBot). ^Beep ^boop, ^etc."
 
 
 @cached(ttl=86400)
@@ -166,14 +166,6 @@ async def process_comment(comment):
                         reply_text += f"\n\nType: {jb_type}\n\nCompatible: {compatible}"
                         reply_text += footer
                         await comment.reply(reply_text)
-            if command == "help":
-                print(
-                    f"!help ran by u/{comment.author.name} \nhttps://reddit.com{comment.permalink}\n"
-                )
-                await comment.reply(
-                    f"Commands:\n\n!repo <repo slug> (!repo bigboss)\n\n!jailbreak, !jb <jailbreak name> (!jailbreak taurine){footer}"
-                )
-                return
 
         # Package search
         if match := pattern.match(comment.body):
