@@ -86,9 +86,9 @@ async def process_comment(comment):
             return
 
         # Package search
-        pattern = re.compile(r"(\\?\[){2}(P?.*?)(\\?\]){2}")
+        pattern = re.compile(r"(.*?)(\\?\[){2}(P?.*?)(\\?\]){2}")
         if match := pattern.match(comment.body):
-            query = match.group(2)
+            query = match.group(3)
             if len(query) < 3:
                 return
             print(
