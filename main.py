@@ -81,15 +81,29 @@ async def format_package_info(package):
 
 
 async def process_comment(comment):
-    pattern = re.compile(
-        r".*?(?<!\[)+\[\[((?!\s+)([\w+\ \&\+\-\<\>\#\:\;\%\(\)]){2,})\]\](?!\])+.*"
-    )
-    command_pattern = r".*!(\w+)(?:\s+(\w+))?$"
     try:
         if comment.author.name in [os.getenv("USERNAME"), "AutoModerator"]:
             return
 
+        # Package search
+        pattern = re.compile(r"(\\?\[){2}(P?.*?)(\\?\]){2}")
+        if match := pattern.match(comment.body):
+            query = match.group(2)
+            if len(query) < 3:
+                return
+            print(
+                f"Package from u/{comment.author.name} matched ({query})\nhttps://reddit.com{comment.permalink}\n"
+            )
+
+            if packages := await get_packages_from_canister(query):
+                response = "\n".join(
+                    [await format_package_info(package) for package in packages]
+                )
+                response += footer
+                await comment.reply(response)
+
         # Command handling
+        command_pattern = r".*!(\w+)(?:\s+(\w+))?$"
         match = re.search(command_pattern, comment.body.lower().strip())
         if match:
             command = match.group(1)
@@ -166,22 +180,16 @@ async def process_comment(comment):
                         reply_text += f"\n\nType: {jb_type}\n\nCompatible: {compatible}"
                         reply_text += footer
                         await comment.reply(reply_text)
-
-        # Package search
-        if match := pattern.match(comment.body):
-            query = match.group(1)
-            if len(query) < 3:
-                return
-            print(
-                f"Package from u/{comment.author.name} matched ({query})\nhttps://reddit.com{comment.permalink}\n"
-            )
-
-            if packages := await get_packages_from_canister(query):
-                response = "\n".join(
-                    [await format_package_info(package) for package in packages]
+            if command == "package" or command == "tweak":
+                print(
+                    f"!package {subquery} ran by u/{comment.author.name} \nhttps://reddit.com{comment.permalink}\n"
                 )
-                response += footer
-                await comment.reply(response)
+                if packages := await get_packages_from_canister(subquery):
+                    response = "\n".join(
+                        [await format_package_info(package) for package in packages]
+                    )
+                    response += footer
+                    await comment.reply(response)
 
     except Exception as e:
         print(f"Something went wrong.\n{e}\n")
