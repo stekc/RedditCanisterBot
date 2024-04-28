@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-footer = "\n\nI am a bot. Powered by [Canister](https://canister.me). Written by [stkc](https://stkc.win). View commands and source code [here](https://github.com/stekc/RedditCanisterBot). Beep boop, etc."
+footer = "\n\nI am a bot. Powered by Canister and ios.cfw.guide. Written by stkc. View commands and source code [here](https://github.com/stekc/RedditCanisterBot). Beep boop, etc."
 
 
 @cached(ttl=86400)
