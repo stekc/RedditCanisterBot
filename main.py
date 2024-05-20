@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-footer = "\n\nI am a bot. Powered by Canister and ios.cfw.guide. Written by stkc. View commands and source code [here](https://github.com/stekc/RedditCanisterBot). Beep boop, etc."
+footer = "\n\nI am a bot. Powered by Canister, TweakReviewsDB and ios.cfw.guide. Written by stkc. View commands and source code [here](https://github.com/stekc/RedditCanisterBot). Beep boop, etc."
 
 
 @cached(ttl=86400)
@@ -35,6 +35,18 @@ async def canister_fetch_repos():
                 response = await resp.json(content_type=None)
                 return response.get("data")
         return None
+
+
+@cached(ttl=86400)
+async def fetch_reviews(package):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            f"https://tweakreviews.pixelomer.com/api/v3/package/{package}/any/any/any?maxReviews=1"
+        ) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                average_stars = data.get("averageStars", 0)
+                return f"{'★' * int(average_stars) + '✩' * (5 - int(average_stars))}"
 
 
 @cached(ttl=86400)
@@ -83,15 +95,23 @@ async def get_packages_from_canister(query: str, subreddit: str = None):
 async def format_package_info(package):
     if not package["name"]:
         package["name"] = package["package"]
-    buttons = (
-        f"[[More Info]({package['depiction']}) | [Add {package['repository']['name']}](https://repos.slim.rocks/repo/?repoUrl={package['repository']['uri']})]"
-        if package["depiction"]
-        else f"[[Add {package['repository']['name']}](https://repos.slim.rocks/repo/?repoUrl={package['repository']['uri']})]"
+    reviews = await fetch_reviews(package["package"])
+    more_info_button = (
+        f"[[More Info]({package['depiction']})]" if package.get("depiction") else ""
+    )
+    add_repo_button = f"[[Add {package['repository']['name']}](https://repos.slim.rocks/repo/?repoUrl={package['repository']['uri']})]"
+    tweak_reviews_button = (
+        f"[[TweakReviewsDB](https://tweakreviews.pixelomer.com/web/package/{package['package']})]"
+        if reviews
+        else None
+    )
+    buttons = " | ".join(
+        filter(None, [more_info_button, add_repo_button, tweak_reviews_button])
     )
     description = package["description"]
     if len(description) > 128:
         description = description[:128].rstrip() + "..."
-    return f"↳ {package['name']} `{package['package']}`\n\n{description}\n\n{buttons}\n\n---\n"
+    return f"↳ {package['name']} `{package['package']}`{' '+reviews if reviews else ''}\n\n{description}\n\n{buttons}\n\n---\n"
 
 
 async def process_comment(comment):
