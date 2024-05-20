@@ -38,8 +38,22 @@ async def canister_fetch_repos():
 
 
 @cached(ttl=86400)
-async def get_packages_from_canister(query: str):
-    ignored_repos = ["zodttd", "modmyi"]
+async def get_packages_from_canister(query: str, subreddit: str = None):
+    query = query.lower()
+
+    replacements = {"filza": "Filza File Manager"}
+
+    words = query.split()
+    for i, word in enumerate(words):
+        if word.lower() in replacements:
+            words[i] = replacements[word.lower()]
+
+    query = " ".join(words)
+
+    if subreddit.lower() == "jailbreak":
+        ignored_repos = ["zodttd", "modmyi"]
+    else:
+        ignored_repos = []
     async with aiohttp.ClientSession() as client:
         async with client.get(
             f"https://api.canister.me/v2/jailbreak/package/search?q={urllib.parse.quote(query)}"
@@ -95,7 +109,9 @@ async def process_comment(comment):
                 f"Package from u/{comment.author.name} matched ({query})\nhttps://reddit.com{comment.permalink}\n"
             )
 
-            if packages := await get_packages_from_canister(query):
+            if packages := await get_packages_from_canister(
+                query, comment.subreddit.display_name
+            ):
                 response = "\n".join(
                     [await format_package_info(package) for package in packages]
                 )
@@ -197,16 +213,20 @@ async def process_comment(comment):
 
 async def main():
     reddit = asyncpraw.Reddit(
-        client_id=os.getenv("CLIENT_ID"),
-        client_secret=os.getenv("CLIENT_SECRET"),
-        user_agent=os.getenv("USER_AGENT"),
-        username=os.getenv("USERNAME"),
-        password=os.getenv("PASSWORD"),
+        client_id=os.getenv("REDDIT_CLIENT_ID"),
+        client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
+        user_agent=os.getenv("REDDIT_USER_AGENT"),
+        username=os.getenv("REDDIT_USERNAME"),
+        password=os.getenv("REDDIT_PASSWORD"),
     )
 
-    subreddit = await reddit.subreddit(os.getenv("SUBREDDIT"))
+    subreddit = await reddit.subreddit(
+        "+".join(os.getenv("REDDIT_SUBREDDITS").split(","))
+    )
 
-    print(f"Logged in as {await reddit.user.me()}\n")
+    print(
+        f"Logged in as {await reddit.user.me()}... Watching: {', '.join(os.getenv('REDDIT_SUBREDDITS').split(','))}\n"
+    )
 
     async for comment in subreddit.stream.comments(skip_existing=True):
         await process_comment(comment)
