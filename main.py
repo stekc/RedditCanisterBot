@@ -46,7 +46,7 @@ async def fetch_reviews(package):
             if resp.status == 200:
                 data = await resp.json()
                 average_stars = data.get("averageStars", 0)
-                return f"{'★' * int(average_stars) + '✩' * (5 - int(average_stars))}"
+                return f"{'★' * int(average_stars + 0.5) + '✩' * (5 - int(average_stars + 0.5))}"
 
 
 @cached(ttl=86400)
