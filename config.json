@@ -1,0 +1,19 @@
+{
+    "jailbreak": {
+        "filtered_repos": [
+            "zodttd", 
+            "modmyi"
+        ]
+    },
+    "legacyjailbreak": {
+        "filtered_repos": []
+    },
+    "canisterjailbreakbot": {
+        "filtered_repos": []
+    },
+    "autocorrect": {
+        "filza": "filza file manager",
+        "icleaner": "icleaner pro",
+        "appsync": "appsync unified"
+    }
+}

@@ -1,0 +1,13 @@
+services:
+  CanisterBot:
+    container_name: CanisterBot
+    image: python:3.12-alpine
+    working_dir: /opt/canister
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./:/opt/canister
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && python main.py"
+    restart: unless-stopped

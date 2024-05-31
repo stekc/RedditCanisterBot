@@ -4,6 +4,7 @@ import os
 import re
 import urllib
 
+import aiofiles
 import aiohttp
 import asyncpraw
 from aiocache import cached
@@ -23,6 +24,19 @@ async def get_ios_cfw():
                 return data
             else:
                 return None
+
+
+async def autocorrect(package):
+    async with aiofiles.open("config.json", "r") as data:
+        config = json.loads(await data.read())["autocorrect"]
+
+    corrected_package = package.strip()
+    for key, value in config.items():
+        if corrected_package == key:
+            corrected_package = value
+            break
+
+    return corrected_package
 
 
 @cached(ttl=86400)
@@ -49,23 +63,22 @@ async def fetch_reviews(package):
                 return f"{'★' * int(average_stars + 0.5) + '✩' * (5 - int(average_stars + 0.5))}"
 
 
+async def repo_filter(subreddit: str):
+    subreddit_key = subreddit.lower()
+    async with aiofiles.open("config.json", "r") as data:
+        config = json.loads(await data.read())
+        if subreddit_key in config and "filtered_repos" in config[subreddit_key]:
+            return config[subreddit_key]["filtered_repos"]
+    return []
+
+
 @cached(ttl=86400)
 async def get_packages_from_canister(query: str, subreddit: str = None):
     query = query.lower()
+    query = await autocorrect(query)
 
-    replacements = {"filza": "Filza File Manager"}
+    ignored_repos = await repo_filter(subreddit)
 
-    words = query.split()
-    for i, word in enumerate(words):
-        if word.lower() in replacements:
-            words[i] = replacements[word.lower()]
-
-    query = " ".join(words)
-
-    if subreddit.lower() == "jailbreak":
-        ignored_repos = ["zodttd", "modmyi"]
-    else:
-        ignored_repos = []
     async with aiohttp.ClientSession() as client:
         async with client.get(
             f"https://api.canister.me/v2/jailbreak/package/search?q={urllib.parse.quote(query)}"
