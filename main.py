@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import re
+import sys
 import urllib
 
 import aiofiles
@@ -13,6 +14,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 footer = "\n\n^(I am a bot. Powered by Canister, TweakReviewsDB and ios.cfw.guide. Written by stkc. View commands and source code) [here](https://github.com/stekc/RedditCanisterBot)^(. Beep boop, etc.)"
+
+
+async def healthchecks_io():
+    while True:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(os.environ.get("HEALTHCHECKS_URL")) as response:
+                if not response.status == 200:
+                    print("Healthchecks.io ping failed.", response.status)
+        await asyncio.sleep(300)
 
 
 @cached(ttl=86400)
@@ -245,24 +255,36 @@ async def process_comment(comment):
 
 
 async def main():
-    reddit = asyncpraw.Reddit(
-        client_id=os.getenv("REDDIT_CLIENT_ID"),
-        client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
-        user_agent=os.getenv("REDDIT_USER_AGENT"),
-        username=os.getenv("REDDIT_USERNAME"),
-        password=os.getenv("REDDIT_PASSWORD"),
-    )
+    try:
+        reddit = asyncpraw.Reddit(
+            client_id=os.getenv("REDDIT_CLIENT_ID"),
+            client_secret=os.getenv("REDDIT_CLIENT_SECRET"),
+            user_agent=os.getenv("REDDIT_USER_AGENT"),
+            username=os.getenv("REDDIT_USERNAME"),
+            password=os.getenv("REDDIT_PASSWORD"),
+        )
 
-    subreddit = await reddit.subreddit(
-        "+".join(os.getenv("REDDIT_SUBREDDITS").split(","))
-    )
+        subreddit = await reddit.subreddit(
+            "+".join(os.getenv("REDDIT_SUBREDDITS").split(","))
+        )
+        me = await reddit.user.me()
+    except:
+        print("Failed to log in. Check your credentials.")
+        sys.exit(1)
 
-    print(
-        f"Logged in as {await reddit.user.me()}... Watching: {', '.join(os.getenv('REDDIT_SUBREDDITS').split(','))}\n"
-    )
+    if me:
+        print(
+            f"Logged in as {me}... Watching: {', '.join(os.getenv('REDDIT_SUBREDDITS').split(','))}\n"
+        )
+
+    if os.getenv("HEALTHCHECKS_URL"):
+        asyncio.create_task(healthchecks_io())
 
     async for comment in subreddit.stream.comments(skip_existing=True):
-        await process_comment(comment)
+        try:
+            await process_comment(comment)
+        except Exception as e:
+            print(f"Something went wrong.\n{e}\n")
 
 
 if __name__ == "__main__":
