@@ -9,7 +9,7 @@ Message u/stkc-win on Reddit or open an issue.
 ### Commands:
 
 - Search for packages by commenting `[[tweak name]]`
-- !package, tweak [name] `!package snowboard`
+- !package, !tweak [name] `!package snowboard`
 - !repo [slug] `!repo chariz`
 - !jailbreak, !jb [name] `!jailbreak taurine`
 
